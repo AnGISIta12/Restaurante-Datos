@@ -175,7 +175,7 @@ footer section + section::before {
 }
 
 .hero-title span {
-    color:          #0077aa;
+    color:          #4fcef5;
     display:        block;
     font-style:     italic;
 }
