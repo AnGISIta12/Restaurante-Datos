@@ -1,0 +1,5 @@
+# Ignorar archivos de IDE y sistema
+*.log
+*.tmp
+vendor/
+.env
