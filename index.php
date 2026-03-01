@@ -202,7 +202,7 @@ function contenido($rol) {
             return '
             <div class="principal-hero">
                 <div class="hero-tagline">Bienvenido al sistema</div>
-                <h1 class="hero-title">La Chula<br><span>Management</span></h1>
+                <h1 class="hero-title">La Chula</h1>
                 <p class="hero-sub">Selecciona tu perfil para continuar</p>
             </div>
             <div class="roles-grid">
