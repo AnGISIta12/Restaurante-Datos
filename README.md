@@ -111,5 +111,5 @@ Abrir XAMPP Control Panel y presionar:
 Start en Apache
 
 ### 4. Acceder desde el Navegador
-http://localhost/restaurante
+http://localhost/Restaurante-Datos
 
