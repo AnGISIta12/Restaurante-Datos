@@ -101,4 +101,15 @@ https://www.apachefriends.org
 
 ### 2. Copiar el Proyecto
 Copiar la carpeta `restaurante` dentro de:
+C:\xampp\htdocs
+
+Debe quedar: C:\xampp\htdocs\restaurante\index.php
+
+### 3. Iniciar Apache
+Abrir XAMPP Control Panel y presionar:
+
+Start en Apache
+
+### 4. Acceder desde el Navegador
+http://localhost/restaurante
 
