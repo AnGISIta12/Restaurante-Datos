@@ -1,124 +1,462 @@
-@font-face {
-    font-family:        fuente_delgada;
-    font-style:         normal;
-    font-weight:        normal;
-    src:                url('../ttf/Antonio-Regular.ttf');
+/* ============================================================
+   RESTAURANTE MANAGEMENT SYSTEM — estilo.css
+   Pontificia Universidad Javeriana · Bases de Datos 2025-1
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ── VARIABLES ─────────────────────────────────────────────── */
+:root {
+    --cream:       #e0f7fa;
+    --warm-white:  #e8f4f8;
+    --gold:        #00bcd4;
+    --gold-light:  #80deea;
+    --gold-dark:   #006064;
+    --charcoal:    navy;
+    --dark-brown:  #000055;
+    --mid-brown:   #0000aa;
+    --text-body:   #002244;
+    --text-muted:  #005577;
+
+    --admin-color:   #c0392b;
+    --maitre-color:  #1565c0;
+    --mesero-color:  #2e7d32;
+    --cocinero-color:#e65100;
+    --cliente-color: #6a1b9a;
+
+    --shadow-soft:  0 4px 24px rgba(0,0,80,0.10);
+    --shadow-card:  0 8px 40px rgba(0,0,80,0.18);
+    --shadow-hover: 0 16px 56px rgba(0,0,80,0.28);
+    --radius:       16px;
+    --radius-sm:    10px;
 }
-@font-face {
-    font-family:        fuente_regular;
-    font-style:         normal;
-    font-weight:        normal;
-    src:                local('Trebuchet MS');
-}
-@font-face {
-    font-family:        fuente_decorativa;
-    font-style:         normal;
-    font-weight:        normal;
-    src:                url('../ttf/dreamporp.ttf');
-}
+
+/* ── RESET & BASE ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
-    background:         cyan;
-    padding:            15%;
-    padding-top:        10px;
-    text-align:         center;
-    background:         blue;
-    background:         linear-gradient( to top right
-                                       , navy
-                                       , blue
-                                       , cyan
-                                       ); /* https://css-tricks.com/css3-gradients/ */
-    font-family:        fuente_decorativa;
+    min-height:     100vh;
+    background:     linear-gradient(to top right, navy, blue, cyan);
+    font-family:    'DM Sans', sans-serif;
+    color:          var(--text-body);
+    padding:        40px 20px;
 }
-body * {
-    font-family:        fuente_regular;
+
+/* ── LAYOUT WRAPPER ─────────────────────────────────────────── */
+.wrapper {
+    max-width:      960px;
+    margin:         0 auto;
 }
-a, input[type=submit] {
-    display:            inline-block;
-    background:         white;
-    color:              navy;
-    font-size:          1.5em;
-    margin:             15px;
-    border:             3px solid black;
-    padding:            15px;
-    border-radius:      5px;
-    text-decoration:    none;
-}
-a.PESTANHA {
-    background:         navy;
-    color:              cyan;
-    font-size:          1em;
-    border:             1px solid black;
-    border:             0px;
-    border-bottom:      1px solid navy;
-    border-radius:      15px 15px 0px 0px;
-    margin-bottom:      0px;
-}
-a.ACTIVA {
-    background:         white;
-    color:              navy;
-    border-bottom:      0px;
-    font-size:          1.3em;
-}
-nav {
-}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
 header {
-    background:         cyan;
-    border-radius:      15px 15px 0px 0px;
-    padding:            15px;
-    font-size:          2em;
+    background:     navy;
+    border-bottom:  1px solid rgba(0,188,212,0.4);
+    padding:        20px 40px;
+    display:        flex;
+    align-items:    center;
+    justify-content:space-between;
+    border-radius:  var(--radius) var(--radius) 0 0;
+    position:       relative;
+    overflow:       hidden;
 }
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, navy, cyan, navy);
+}
+
+.header-brand {
+    font-family:    'Playfair Display', serif;
+    font-size:      1.5rem;
+    font-weight:    700;
+    color:          cyan;
+    letter-spacing: 0.05em;
+}
+
+.header-brand span {
+    display:        block;
+    font-size:      0.65rem;
+    font-family:    'DM Sans', sans-serif;
+    font-weight:    400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color:          var(--text-muted);
+    margin-top:     2px;
+}
+
+.header-nav {
+    display:        flex;
+    gap:            6px;
+}
+
+.header-nav a {
+    font-size:      0.78rem;
+    color:          var(--text-muted);
+    text-decoration:none;
+    padding:        6px 14px;
+    border-radius:  20px;
+    border:         1px solid rgba(201,168,76,0.2);
+    transition:     all 0.2s;
+    font-weight:    500;
+    background:     transparent;
+    display:        inline-block;
+    margin:         0;
+}
+
+.header-nav a:hover {
+    background:     rgba(0,188,212,0.15);
+    color:          cyan;
+    border-color:   rgba(0,188,212,0.5);
+    transform:      none;
+    box-shadow:     none;
+}
+
+/* ── MAIN ───────────────────────────────────────────────────── */
 main {
-    background:         white;
-    border:             0px;
-    border-radius:      0px 0px 15px 15px;
-    padding:            25px;
+    background:     var(--warm-white);
+    border-radius:  0;
+    padding:        48px 40px;
+    min-height:     500px;
 }
-footer * {
-    display:            inline-block;
-    background:         white;
-    margin:             5px;
-    margin-top:         0px;
-    border-radius:      0px 0px 5px 5px;
-    padding:            5px;
+
+/* ── FOOTER ─────────────────────────────────────────────────── */
+footer {
+    background:     navy;
+    border-radius:  0 0 var(--radius) var(--radius);
+    padding:        18px 40px;
+    display:        flex;
+    align-items:    center;
+    justify-content:center;
+    gap:            32px;
+    border-top:     1px solid rgba(0,188,212,0.3);
 }
-.MENU_OPCIONES button {
-	height:		100px;
-	width:		100px;
-	margin:		10px;
-	font-size:	large;
+
+footer section {
+    font-size:      0.78rem;
+    color:          var(--text-muted);
+    letter-spacing: 0.05em;
+    position:       relative;
 }
-.SECCION {
-	display:	inline-block;
-	margin:		10px;
-	border:		3px solid grey;
-	border-radius:	10px;
-	padding:	5px;
-	vertical-align: top;
+
+footer section + section::before {
+    content:        '·';
+    position:       absolute;
+    left:           -18px;
+    color:          cyan;
+    opacity:        0.6;
 }
-.PLATO {
-	text-align:	center;
-	border-bottom:	1px dotted black;
+
+/* ── HERO (MENÚ PRINCIPAL) ──────────────────────────────────── */
+.principal-hero {
+    text-align:     center;
+    padding:        20px 0 48px;
 }
-.PLATO .TIPO {
-	display: inline-block;
-	text-align:	left;
-	width:		145px;
+
+.hero-tagline {
+    font-size:      0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color:          var(--gold-dark);
+    font-weight:    500;
+    margin-bottom:  12px;
 }
-.PLATO .NOMBRE {
-	display: inline-block;
-	text-align:	left;
-	width:		145px;
-    vertical-align: middle;
+
+.hero-title {
+    font-family:    'Playfair Display', serif;
+    font-size:      clamp(3rem, 8vw, 5.5rem);
+    font-weight:    900;
+    color:          navy;
+    line-height:    1;
+    margin-bottom:  16px;
 }
-.PLATO .DESCRIPCION {
-	display: inline-block;
-	text-align:	left;
-	width:		145px;
-	font-size:	small;
-    vertical-align: middle;
+
+.hero-title span {
+    color:          #0077aa;
+    display:        block;
+    font-style:     italic;
 }
-.PLATO .PRECIO {
-	font-size:   	1.2em;
-    vertical-align: middle;
-    margin-left:    35px;
+
+.hero-sub {
+    font-size:      1rem;
+    color:          var(--text-muted);
+    font-weight:    400;
+    margin-bottom:  0;
+}
+
+/* ── ROLES GRID ─────────────────────────────────────────────── */
+.roles-grid {
+    display:        grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap:            16px;
+    margin-top:     40px;
+}
+
+.rol-card {
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    gap:            8px;
+    padding:        32px 16px 28px;
+    border-radius:  var(--radius);
+    text-decoration:none;
+    border:         2px solid transparent;
+    background:     var(--cream);
+    transition:     all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position:       relative;
+    overflow:       hidden;
+    box-shadow:     var(--shadow-soft);
+}
+
+.rol-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    transition: opacity 0.3s;
+}
+
+.rol-admin::before    { background: var(--admin-color); }
+.rol-maitre::before   { background: var(--maitre-color); }
+.rol-mesero::before   { background: var(--mesero-color); }
+.rol-cocinero::before { background: var(--cocinero-color); }
+.rol-cliente::before  { background: var(--cliente-color); }
+
+.rol-card:hover {
+    transform:      translateY(-8px) scale(1.02);
+    box-shadow:     var(--shadow-hover);
+    border-color:   cyan;
+}
+
+.rol-emoji {
+    font-size:      2.8rem;
+    line-height:    1;
+    filter:         drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+}
+
+.rol-nombre {
+    font-family:    'Playfair Display', serif;
+    font-size:      1.05rem;
+    font-weight:    700;
+    color:          navy;
+}
+
+.rol-desc {
+    font-size:      0.75rem;
+    color:          var(--text-muted);
+    font-weight:    400;
+}
+
+/* ── ROLE HEADER (SUBMENÚS) ─────────────────────────────────── */
+.role-header {
+    display:        flex;
+    align-items:    center;
+    gap:            20px;
+    padding:        28px 32px;
+    border-radius:  var(--radius);
+    margin-bottom:  32px;
+    position:       relative;
+    overflow:       hidden;
+}
+
+.role-header::after {
+    content: '';
+    position: absolute;
+    right: -20px; top: -20px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+}
+
+.admin-header    { background: linear-gradient(135deg, #c0392b, #922b21); color: white; }
+.maitre-header   { background: linear-gradient(135deg, #1a5276, #154360); color: white; }
+.mesero-header   { background: linear-gradient(135deg, #1e8449, #196f3d); color: white; }
+.cocinero-header { background: linear-gradient(135deg, #d35400, #a04000); color: white; }
+.cliente-header  { background: linear-gradient(135deg, #6c3483, #512e5f); color: white; }
+
+.role-icon {
+    font-size:      2.8rem;
+    filter:         drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+    flex-shrink:    0;
+}
+
+.role-header h2 {
+    font-family:    'Playfair Display', serif;
+    font-size:      2rem;
+    font-weight:    700;
+    color:          white;
+    line-height:    1.1;
+}
+
+.role-desc {
+    font-size:      0.9rem;
+    color:          rgba(255,255,255,0.75);
+    margin-top:     4px;
+    font-weight:    300;
+}
+
+/* ── FUNCIONES GRID ─────────────────────────────────────────── */
+.funciones-grid {
+    display:        grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap:            16px;
+    margin-bottom:  36px;
+}
+
+.funcion-card {
+    background:     var(--cream);
+    border:         1px solid rgba(0,0,0,0.07);
+    border-radius:  var(--radius-sm);
+    padding:        24px;
+    cursor:         pointer;
+    transition:     all 0.25s ease;
+    position:       relative;
+    box-shadow:     var(--shadow-soft);
+    overflow:       hidden;
+}
+
+.funcion-card:hover {
+    transform:      translateY(-4px);
+    box-shadow:     var(--shadow-card);
+    border-color:   cyan;
+    background:     #f0fbff;
+}
+
+.funcion-card .card-icon {
+    font-size:      1.8rem;
+    margin-bottom:  10px;
+    display:        block;
+    line-height:    1;
+}
+
+.funcion-card h3 {
+    font-family:    'Playfair Display', serif;
+    font-size:      1.05rem;
+    font-weight:    700;
+    color:          navy;
+    margin-bottom:  6px;
+}
+
+.funcion-card p {
+    font-size:      0.82rem;
+    color:          var(--text-muted);
+    line-height:    1.5;
+}
+
+.card-arrow {
+    position:       absolute;
+    bottom:         20px;
+    right:          20px;
+    font-size:      1.1rem;
+    color:          #0077aa;
+    opacity:        0;
+    transform:      translateX(-6px);
+    transition:     all 0.2s;
+    font-weight:    600;
+}
+
+.funcion-card:hover .card-arrow {
+    opacity:        1;
+    transform:      translateX(0);
+}
+
+.funcion-card.reporte {
+    border-left:    4px solid #0077aa;
+}
+
+.funcion-card.notif {
+    border-left:    4px solid var(--mesero-color);
+}
+
+.badge {
+    position:       absolute;
+    top:            16px;
+    right:          16px;
+    background:     #e74c3c;
+    color:          white;
+    font-size:      0.7rem;
+    font-weight:    700;
+    width:          22px;
+    height:         22px;
+    border-radius:  50%;
+    display:        flex;
+    align-items:    center;
+    justify-content:center;
+    animation:      pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(231,76,60,0.2); }
+}
+
+/* ── BOTÓN VOLVER ───────────────────────────────────────────── */
+.btn-volver {
+    display:        inline-block;
+    padding:        12px 28px;
+    background:     transparent;
+    border:         2px solid #0077aa;
+    color:          navy;
+    border-radius:  30px;
+    font-size:      0.88rem;
+    font-weight:    600;
+    text-decoration:none;
+    letter-spacing: 0.04em;
+    transition:     all 0.2s;
+    margin:         0;
+}
+
+.btn-volver:hover {
+    background:     #0077aa;
+    color:          white;
+    transform:      translateX(-4px);
+    box-shadow:     none;
+    border-color:   #0077aa;
+}
+
+/* ── ENTRADA ANIMADA ────────────────────────────────────────── */
+main article > * {
+    animation: fadeUp 0.4s ease both;
+}
+
+main article > *:nth-child(1) { animation-delay: 0.0s; }
+main article > *:nth-child(2) { animation-delay: 0.08s; }
+main article > *:nth-child(3) { animation-delay: 0.16s; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.funciones-grid .funcion-card {
+    animation: fadeUp 0.4s ease both;
+}
+.funciones-grid .funcion-card:nth-child(1) { animation-delay: 0.1s; }
+.funciones-grid .funcion-card:nth-child(2) { animation-delay: 0.18s; }
+.funciones-grid .funcion-card:nth-child(3) { animation-delay: 0.26s; }
+.funciones-grid .funcion-card:nth-child(4) { animation-delay: 0.34s; }
+.funciones-grid .funcion-card:nth-child(5) { animation-delay: 0.42s; }
+.funciones-grid .funcion-card:nth-child(6) { animation-delay: 0.50s; }
+
+.roles-grid .rol-card:nth-child(1) { animation: fadeUp 0.4s 0.15s ease both; }
+.roles-grid .rol-card:nth-child(2) { animation: fadeUp 0.4s 0.22s ease both; }
+.roles-grid .rol-card:nth-child(3) { animation: fadeUp 0.4s 0.29s ease both; }
+.roles-grid .rol-card:nth-child(4) { animation: fadeUp 0.4s 0.36s ease both; }
+.roles-grid .rol-card:nth-child(5) { animation: fadeUp 0.4s 0.43s ease both; }
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    body { padding: 12px; }
+    main { padding: 28px 20px; }
+    header { padding: 16px 20px; flex-direction: column; gap: 12px; }
+    footer { flex-direction: column; gap: 8px; padding: 16px 20px; }
+    footer section + section::before { display: none; }
+    .roles-grid { grid-template-columns: repeat(2, 1fr); }
+    .funciones-grid { grid-template-columns: 1fr; }
+    .role-header { padding: 20px; gap: 14px; }
+    .hero-title { font-size: 2.8rem; }
 }

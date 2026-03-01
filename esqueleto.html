@@ -2,23 +2,37 @@
 <html lang='es-CO'>
     <head>
         <meta charset='UTF-8' />
-        <title>Ejercicio Restaurante</title>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+        <title>Restaurante — Sistema de Gestión</title>
         <link rel='stylesheet' href='css/estilo.css' />
-        <script languaje='javascript' src='lib/programa.js'></script>
+        <script src='lib/programa.js' defer></script>
     </head>
     <body>
-        <header>
-            Ejercicio
-        </header>
-        <main>
-            <article>
-                %s
-            </article>
-        </main>
-        <footer>
-            <section>Angy Lorena Bautista Salazar</section>
-            <section>Bases de datos</section>
-            <section>Universidad Javeriana</section>
-        </footer>
+        <div class='wrapper'>
+            <header>
+                <div class='header-brand'>
+                    La Chula
+                    <span>Sistema de Gestión · Restaurante</span>
+                </div>
+                <nav class='header-nav'>
+                    <a href='index.php'>Inicio</a>
+                    <a href='?rol=administrador'>Admin</a>
+                    <a href='?rol=maitre'>Maître</a>
+                    <a href='?rol=mesero'>Mesero</a>
+                    <a href='?rol=cocinero'>Cocina</a>
+                    <a href='?rol=cliente'>Cliente</a>
+                </nav>
+            </header>
+            <main>
+                <article>
+                    %s
+                </article>
+            </main>
+            <footer>
+                <section>Angy Lorena Bautista Salazar</section>
+                <section>Bases de Datos 2025-1</section>
+                <section>Pontificia Universidad Javeriana</section>
+            </footer>
+        </div>
     </body>
 </html>
