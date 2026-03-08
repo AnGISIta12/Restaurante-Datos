@@ -22,9 +22,9 @@ if (!$autenticado && $rol !== 'auth') {
 }
 
 $conn = null;
-if ($autenticado) {
-    $conn = pg_conectar($host, $dbname, $user);
-}
+//if ($autenticado) {
+  //  $conn = pg_conectar($host, $dbname, $user);
+//}
 
 function contenido($rol, $conn, $autenticado, $usuario_nombre) {
 

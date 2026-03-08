@@ -1,8 +1,21 @@
 <?php
 /*------------------------------------------------------------------*/
 /**
+ * @brief Usuarios de prueba hardcodeados (sin BD por ahora).
+ *        Formato: 'nombre' => ['password' => '...', 'rol' => '...']
+ */
+$USUARIOS_PRUEBA = [
+    'admin'    => ['password' => '1234', 'rol' => 'administrador'],
+    'maitre'   => ['password' => '1235', 'rol' => 'maitre'],
+    'mesero'   => ['password' => '1236', 'rol' => 'mesero'],
+    'cocinero' => ['password' => '1237', 'rol' => 'cocinero'],
+    'cliente'  => ['password' => '1238', 'rol' => 'cliente'],
+];
+
+/*------------------------------------------------------------------*/
+/**
  * @brief Genera el formulario de autenticación (login + registro).
- * @return string HTML completo del formulario de auth.
+ * @return string HTML completo del formulario.
  */
 function fn_formulario_auth()
 /*--------------------------------------------------------------------*/
@@ -10,10 +23,11 @@ function fn_formulario_auth()
     $msg = '';
     if (isset($_GET['error'])) {
         $msg = match($_GET['error']) {
-            'credenciales' => '<div class="auth-msg auth-error">❌ Usuario o contraseña incorrectos.</div>',
-            'usuario_existe'=> '<div class="auth-msg auth-error">❌ Ese correo ya está registrado.</div>',
-            'campos'       => '<div class="auth-msg auth-error">❌ Por favor completa todos los campos.</div>',
-            default        => ''
+            'credenciales'   => '<div class="auth-msg auth-error">❌ Usuario o contraseña incorrectos.</div>',
+            'usuario_existe' => '<div class="auth-msg auth-error">❌ Ese nombre de usuario ya está registrado.</div>',
+            'campos'         => '<div class="auth-msg auth-error">❌ Por favor completa todos los campos.</div>',
+            'pw_no_coincide' => '<div class="auth-msg auth-error">❌ Las contraseñas no coinciden.</div>',
+            default          => ''
         };
     }
     if (isset($_GET['ok']) && $_GET['ok'] === 'registro') {
@@ -37,11 +51,11 @@ function fn_formulario_auth()
 
         <!-- LOGIN -->
         <div id="tab-login" class="auth-form-wrap active">
-            <form method="POST" action="auth.php" class="auth-form">
+            <form method="POST" action="login.php" class="auth-form">
                 <input type="hidden" name="accion" value="login" />
                 <div class="auth-field">
-                    <label>Correo electrónico</label>
-                    <input type="email" name="correo" placeholder="tu@correo.com" required autocomplete="email" />
+                    <label>Nombre de usuario</label>
+                    <input type="text" name="nombre" placeholder="Ej: admin" required autocomplete="username" />
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
@@ -50,38 +64,17 @@ function fn_formulario_auth()
                         <button type="button" class="toggle-pw" onclick="togglePw(\'pw-login\')">👁</button>
                     </div>
                 </div>
-                <div class="auth-field">
-                    <label>Ingresar como</label>
-                    <select name="rol" required>
-                        <option value="">— Selecciona tu rol —</option>
-                        <option value="administrador">⚙️ Administrador</option>
-                        <option value="maitre">🎩 Maître</option>
-                        <option value="mesero">🍷 Mesero</option>
-                        <option value="cocinero">👨‍🍳 Cocinero</option>
-                        <option value="cliente">🧑‍💼 Cliente</option>
-                    </select>
-                </div>
                 <button type="submit" class="auth-btn">Entrar →</button>
             </form>
         </div>
 
         <!-- REGISTRO -->
         <div id="tab-registro" class="auth-form-wrap">
-            <form method="POST" action="auth.php" class="auth-form">
+            <form method="POST" action="login.php" class="auth-form">
                 <input type="hidden" name="accion" value="registro" />
-                <div class="auth-row">
-                    <div class="auth-field">
-                        <label>Nombre</label>
-                        <input type="text" name="nombre" placeholder="Tu nombre" required />
-                    </div>
-                    <div class="auth-field">
-                        <label>Apellido</label>
-                        <input type="text" name="apellido" placeholder="Tu apellido" required />
-                    </div>
-                </div>
                 <div class="auth-field">
-                    <label>Correo electrónico</label>
-                    <input type="email" name="correo" placeholder="tu@correo.com" required autocomplete="email" />
+                    <label>Nombre de usuario</label>
+                    <input type="text" name="nombre" placeholder="Ej: maria_gomez" required />
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
@@ -99,7 +92,7 @@ function fn_formulario_auth()
                 </div>
                 <div class="auth-field">
                     <label>Rol</label>
-                    <select name="rol" required>
+                    <select name="rol_nombre" required>
                         <option value="">— Selecciona tu rol —</option>
                         <option value="administrador">⚙️ Administrador</option>
                         <option value="maitre">🎩 Maître</option>
@@ -117,61 +110,66 @@ function fn_formulario_auth()
 
 /*------------------------------------------------------------------*/
 /**
- * @brief Procesa el formulario POST de login o registro.
- * @param resource $conn Conexión activa a PostgreSQL.
- * @return void Redirige según resultado.
+ * @brief Procesa login y registro SIN base de datos.
+ *        Los usuarios registrados se guardan en $_SESSION['usuarios_registrados']
+ *        para que persistan durante la sesión.
  */
-function fn_procesar_auth($conn)
+function fn_procesar_auth()
 /*--------------------------------------------------------------------*/
 {
+    global $USUARIOS_PRUEBA;
+
+    session_start();
+
+    // Combinar usuarios hardcodeados + los registrados en esta sesión
+    $usuarios_sesion = $_SESSION['usuarios_registrados'] ?? [];
+    $todos = array_merge($USUARIOS_PRUEBA, $usuarios_sesion);
+
     $accion = $_POST['accion'] ?? '';
 
+    /* ── LOGIN ──────────────────────────────────────────────── */
     if ($accion === 'login') {
-        $correo = pg_escape_string($conn, trim($_POST['correo'] ?? ''));
+        $nombre = trim($_POST['nombre'] ?? '');
         $pw     = $_POST['password'] ?? '';
-        $rol    = pg_escape_string($conn, $_POST['rol'] ?? '');
 
-        if (!$correo || !$pw || !$rol) {
+        if (!$nombre || !$pw) {
             header('Location: index.php?error=campos'); exit;
         }
 
-        $res = pg_query($conn, "SELECT id, nombre, password_hash, rol FROM usuarios WHERE correo='$correo' LIMIT 1");
-        $usr = pg_fetch_assoc($res);
-
-        if (!$usr || !password_verify($pw, $usr['password_hash'])) {
+        if (!isset($todos[$nombre]) || $todos[$nombre]['password'] !== $pw) {
             header('Location: index.php?error=credenciales'); exit;
         }
 
-        session_start();
-        $_SESSION['usuario_id']   = $usr['id'];
-        $_SESSION['usuario_nombre'] = $usr['nombre'];
-        $_SESSION['rol']          = $rol;
+        $rol = $todos[$nombre]['rol'];
+
+        $_SESSION['usuario_id']     = $nombre; // usamos el nombre como id temporal
+        $_SESSION['usuario_nombre'] = $nombre;
+        $_SESSION['rol']            = $rol;
+
         header('Location: index.php?rol=' . urlencode($rol)); exit;
 
+    /* ── REGISTRO ───────────────────────────────────────────── */
     } elseif ($accion === 'registro') {
-        $nombre   = pg_escape_string($conn, trim($_POST['nombre']   ?? ''));
-        $apellido = pg_escape_string($conn, trim($_POST['apellido'] ?? ''));
-        $correo   = pg_escape_string($conn, trim($_POST['correo']   ?? ''));
-        $pw       = $_POST['password']  ?? '';
-        $pw2      = $_POST['password2'] ?? '';
-        $rol      = pg_escape_string($conn, $_POST['rol'] ?? '');
+        $nombre     = trim($_POST['nombre']     ?? '');
+        $pw         = $_POST['password']        ?? '';
+        $pw2        = $_POST['password2']       ?? '';
+        $rol_nombre = trim($_POST['rol_nombre'] ?? '');
 
-        if (!$nombre || !$apellido || !$correo || !$pw || !$rol) {
+        if (!$nombre || !$pw || !$rol_nombre) {
             header('Location: index.php?error=campos'); exit;
         }
         if ($pw !== $pw2) {
             header('Location: index.php?error=pw_no_coincide'); exit;
         }
-
-        // Verificar si ya existe
-        $check = pg_query($conn, "SELECT id FROM usuarios WHERE correo='$correo' LIMIT 1");
-        if (pg_num_rows($check) > 0) {
+        if (isset($todos[$nombre])) {
             header('Location: index.php?error=usuario_existe'); exit;
         }
 
-        $hash = password_hash($pw, PASSWORD_DEFAULT);
-        pg_query($conn, "INSERT INTO usuarios (nombre, apellido, correo, password_hash, rol)
-                         VALUES ('$nombre','$apellido','$correo','$hash','$rol')");
+        // Guardar el nuevo usuario en la sesión
+        $_SESSION['usuarios_registrados'][$nombre] = [
+            'password' => $pw,
+            'rol'      => $rol_nombre,
+        ];
 
         header('Location: index.php?ok=registro'); exit;
     }
