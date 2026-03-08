@@ -1,25 +1,17 @@
 <?php
-/*------------------------------------------------------------------*/
-/**
- * @brief Usuarios de prueba hardcodeados (sin BD por ahora).
- *        Formato: 'nombre' => ['password' => '...', 'rol' => '...']
- */
-$USUARIOS_PRUEBA = [
+$GLOBALS['USUARIOS_PRUEBA'] = [
     'admin'    => ['password' => '1234', 'rol' => 'administrador'],
-    'maitre'   => ['password' => '1235', 'rol' => 'maitre'],
-    'mesero'   => ['password' => '1236', 'rol' => 'mesero'],
-    'cocinero' => ['password' => '1237', 'rol' => 'cocinero'],
-    'cliente'  => ['password' => '1238', 'rol' => 'cliente'],
+    'maitre'   => ['password' => '1234', 'rol' => 'maitre'],
+    'mesero'   => ['password' => '1234', 'rol' => 'mesero'],
+    'cocinero' => ['password' => '1234', 'rol' => 'cocinero'],
+    'cliente'  => ['password' => '1234', 'rol' => 'cliente'],
 ];
 
-/*------------------------------------------------------------------*/
-/**
- * @brief Genera el formulario de autenticación (login + registro).
- * @return string HTML completo del formulario.
- */
 function fn_formulario_auth()
-/*--------------------------------------------------------------------*/
 {
+    // Qué tab mostrar
+    $tab = $_GET['tab'] ?? 'login';
+
     $msg = '';
     if (isset($_GET['error'])) {
         $msg = match($_GET['error']) {
@@ -45,12 +37,18 @@ function fn_formulario_auth()
         ' . $msg . '
 
         <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchTab(\'login\', this)">Iniciar Sesión</button>
-            <button class="auth-tab" onclick="switchTab(\'registro\', this)">Crear Cuenta</button>
+            <a href="?tab=login"
+               class="auth-tab ' . ($tab === 'login' ? 'active' : '') . '">
+               Iniciar Sesión
+            </a>
+            <a href="?tab=registro"
+               class="auth-tab ' . ($tab === 'registro' ? 'active' : '') . '">
+               Crear Cuenta
+            </a>
         </div>
 
-        <!-- LOGIN -->
-        <div id="tab-login" class="auth-form-wrap active">
+        ' . ($tab === 'login' ? '
+        <div class="auth-form-wrap active">
             <form method="POST" action="login.php" class="auth-form">
                 <input type="hidden" name="accion" value="login" />
                 <div class="auth-field">
@@ -59,17 +57,13 @@ function fn_formulario_auth()
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
-                    <div class="input-pw">
-                        <input type="password" name="password" id="pw-login" placeholder="••••••••" required />
-                        <button type="button" class="toggle-pw" onclick="togglePw(\'pw-login\')">👁</button>
-                    </div>
+                    <input type="password" name="password" placeholder="••••••••" required />
                 </div>
                 <button type="submit" class="auth-btn">Entrar →</button>
             </form>
         </div>
-
-        <!-- REGISTRO -->
-        <div id="tab-registro" class="auth-form-wrap">
+        ' : '
+        <div class="auth-form-wrap active">
             <form method="POST" action="login.php" class="auth-form">
                 <input type="hidden" name="accion" value="registro" />
                 <div class="auth-field">
@@ -78,17 +72,11 @@ function fn_formulario_auth()
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
-                    <div class="input-pw">
-                        <input type="password" name="password" id="pw-reg" placeholder="Mínimo 6 caracteres" required minlength="6" />
-                        <button type="button" class="toggle-pw" onclick="togglePw(\'pw-reg\')">👁</button>
-                    </div>
+                    <input type="password" name="password" placeholder="Mínimo 6 caracteres" required minlength="6" />
                 </div>
                 <div class="auth-field">
                     <label>Confirmar contraseña</label>
-                    <div class="input-pw">
-                        <input type="password" name="password2" id="pw-reg2" placeholder="Repite la contraseña" required />
-                        <button type="button" class="toggle-pw" onclick="togglePw(\'pw-reg2\')">👁</button>
-                    </div>
+                    <input type="password" name="password2" placeholder="Repite la contraseña" required />
                 </div>
                 <div class="auth-field">
                     <label>Rol</label>
@@ -104,51 +92,37 @@ function fn_formulario_auth()
                 <button type="submit" class="auth-btn">Crear cuenta →</button>
             </form>
         </div>
+        ') . '
     </div>
     ';
 }
 
-/*------------------------------------------------------------------*/
-/**
- * @brief Procesa login y registro SIN base de datos.
- *        Los usuarios registrados se guardan en $_SESSION['usuarios_registrados']
- *        para que persistan durante la sesión.
- */
 function fn_procesar_auth()
-/*--------------------------------------------------------------------*/
 {
-    global $USUARIOS_PRUEBA;
-
     session_start();
 
-    // Combinar usuarios hardcodeados + los registrados en esta sesión
     $usuarios_sesion = $_SESSION['usuarios_registrados'] ?? [];
-    $todos = array_merge($USUARIOS_PRUEBA, $usuarios_sesion);
+    $todos = array_merge($GLOBALS['USUARIOS_PRUEBA'], $usuarios_sesion);
 
     $accion = $_POST['accion'] ?? '';
 
-    /* ── LOGIN ──────────────────────────────────────────────── */
     if ($accion === 'login') {
         $nombre = trim($_POST['nombre'] ?? '');
-        $pw     = $_POST['password'] ?? '';
+        $pw     = $_POST['password']   ?? '';
 
         if (!$nombre || !$pw) {
-            header('Location: index.php?error=campos'); exit;
+            header('Location: index.php?tab=login&error=campos'); exit;
         }
-
         if (!isset($todos[$nombre]) || $todos[$nombre]['password'] !== $pw) {
-            header('Location: index.php?error=credenciales'); exit;
+            header('Location: index.php?tab=login&error=credenciales'); exit;
         }
 
         $rol = $todos[$nombre]['rol'];
-
-        $_SESSION['usuario_id']     = $nombre; // usamos el nombre como id temporal
+        $_SESSION['usuario_id']     = $nombre;
         $_SESSION['usuario_nombre'] = $nombre;
         $_SESSION['rol']            = $rol;
-
         header('Location: index.php?rol=' . urlencode($rol)); exit;
 
-    /* ── REGISTRO ───────────────────────────────────────────── */
     } elseif ($accion === 'registro') {
         $nombre     = trim($_POST['nombre']     ?? '');
         $pw         = $_POST['password']        ?? '';
@@ -156,22 +130,21 @@ function fn_procesar_auth()
         $rol_nombre = trim($_POST['rol_nombre'] ?? '');
 
         if (!$nombre || !$pw || !$rol_nombre) {
-            header('Location: index.php?error=campos'); exit;
+            header('Location: index.php?tab=registro&error=campos'); exit;
         }
         if ($pw !== $pw2) {
-            header('Location: index.php?error=pw_no_coincide'); exit;
+            header('Location: index.php?tab=registro&error=pw_no_coincide'); exit;
         }
         if (isset($todos[$nombre])) {
-            header('Location: index.php?error=usuario_existe'); exit;
+            header('Location: index.php?tab=registro&error=usuario_existe'); exit;
         }
 
-        // Guardar el nuevo usuario en la sesión
         $_SESSION['usuarios_registrados'][$nombre] = [
             'password' => $pw,
             'rol'      => $rol_nombre,
         ];
 
-        header('Location: index.php?ok=registro'); exit;
+        header('Location: index.php?tab=login&ok=registro'); exit;
     }
 }
 ?>

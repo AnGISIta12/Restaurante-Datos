@@ -212,10 +212,19 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
 $contenido = contenido($rol, $conn, $autenticado, $usuario_nombre);
 $esqueleto = file_get_contents("esqueleto.html");
 
-$session_info = $autenticado
-    ? '<span class="session-user">👤 ' . htmlspecialchars($usuario_nombre) . ' <a href="?logout=1" class="logout-link">Salir</a></span>'
-    : '';
+if (!$autenticado) {
+    $nav = '';
+} else {
+    $nav = '
+        <a href="index.php">🏠 Inicio</a>
+        <span class="session-user">
+            👤 ' . htmlspecialchars($usuario_nombre) . '
+            &nbsp;·&nbsp;
+            <a href="?logout=1" class="logout-link">Salir</a>
+        </span>
+    ';
+}
 
-$esqueleto = str_replace('<!-- SESSION_SLOT -->', $session_info, $esqueleto);
+$esqueleto = str_replace('<!-- NAV_SLOT -->', $nav, $esqueleto);
 echo sprintf($esqueleto, $contenido);
 ?>
