@@ -1,15 +1,24 @@
 <?php
-$GLOBALS['USUARIOS_PRUEBA'] = [
-    'admin'    => ['password' => '1234', 'rol' => 'administrador'],
-    'maitre'   => ['password' => '1234', 'rol' => 'maitre'],
-    'mesero'   => ['password' => '1234', 'rol' => 'mesero'],
-    'cocinero' => ['password' => '1234', 'rol' => 'cocinero'],
-    'cliente'  => ['password' => '1234', 'rol' => 'cliente'],
-];
+/*
+ * auth.php — Autenticación con PDO contra PostgreSQL.
+ */
+
+function fn_get_conn()
+{
+    if (!isset($GLOBALS['host'])) return null;
+    try {
+        $dsn  = "pgsql:host={$GLOBALS['host']};dbname={$GLOBALS['dbname']}";
+        $conn = new PDO($dsn, $GLOBALS['user'], $GLOBALS['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        return $conn;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
 
 function fn_formulario_auth()
 {
-    // Qué tab mostrar
     $tab = $_GET['tab'] ?? 'login';
 
     $msg = '';
@@ -19,6 +28,7 @@ function fn_formulario_auth()
             'usuario_existe' => '<div class="auth-msg auth-error">❌ Ese nombre de usuario ya está registrado.</div>',
             'campos'         => '<div class="auth-msg auth-error">❌ Por favor completa todos los campos.</div>',
             'pw_no_coincide' => '<div class="auth-msg auth-error">❌ Las contraseñas no coinciden.</div>',
+            'db_error'       => '<div class="auth-msg auth-error">❌ Error de base de datos. Contacta al administrador.</div>',
             default          => ''
         };
     }
@@ -53,7 +63,7 @@ function fn_formulario_auth()
                 <input type="hidden" name="accion" value="login" />
                 <div class="auth-field">
                     <label>Nombre de usuario</label>
-                    <input type="text" name="nombre" placeholder="Ej: admin" required autocomplete="username" />
+                    <input type="text" name="nombre" placeholder="Ej: Ana Garcia" required autocomplete="username" />
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
@@ -68,7 +78,7 @@ function fn_formulario_auth()
                 <input type="hidden" name="accion" value="registro" />
                 <div class="auth-field">
                     <label>Nombre de usuario</label>
-                    <input type="text" name="nombre" placeholder="Ej: maria_gomez" required />
+                    <input type="text" name="nombre" placeholder="Ej: Maria Gomez" required />
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
@@ -82,11 +92,11 @@ function fn_formulario_auth()
                     <label>Rol</label>
                     <select name="rol_nombre" required>
                         <option value="">— Selecciona tu rol —</option>
-                        <option value="administrador">⚙️ Administrador</option>
-                        <option value="maitre">🎩 Maître</option>
-                        <option value="mesero">🍷 Mesero</option>
-                        <option value="cocinero">👨‍🍳 Cocinero</option>
-                        <option value="cliente">🧑‍💼 Cliente</option>
+                        <option value="Administrador">⚙️ Administrador</option>
+                        <option value="Maitre">🎩 Maître</option>
+                        <option value="Mesero">🍷 Mesero</option>
+                        <option value="Cocinero">👨‍🍳 Cocinero</option>
+                        <option value="Cliente">🧑‍💼 Cliente</option>
                     </select>
                 </div>
                 <button type="submit" class="auth-btn">Crear cuenta →</button>
@@ -101,11 +111,9 @@ function fn_procesar_auth()
 {
     session_start();
 
-    $usuarios_sesion = $_SESSION['usuarios_registrados'] ?? [];
-    $todos = array_merge($GLOBALS['USUARIOS_PRUEBA'], $usuarios_sesion);
-
     $accion = $_POST['accion'] ?? '';
 
+    /* ---- LOGIN ---- */
     if ($accion === 'login') {
         $nombre = trim($_POST['nombre'] ?? '');
         $pw     = $_POST['password']   ?? '';
@@ -113,16 +121,38 @@ function fn_procesar_auth()
         if (!$nombre || !$pw) {
             header('Location: index.php?tab=login&error=campos'); exit;
         }
-        if (!isset($todos[$nombre]) || $todos[$nombre]['password'] !== $pw) {
+
+        $conn = fn_get_conn();
+        if (!$conn) {
+            header('Location: index.php?tab=login&error=db_error'); exit;
+        }
+
+        $sql = "
+            SELECT u.id_usuario, u.nombre,
+                   COALESCE(r.nombre, 'Cliente') AS rol
+            FROM usuarios u
+            LEFT JOIN actuaciones a ON a.usuario_id = u.id_usuario
+            LEFT JOIN roles       r ON r.id_rol     = a.rol_id
+            WHERE u.nombre = :nombre
+              AND encode(u.clave, 'hex') = encode(sha256((:pw)::bytea), 'hex')
+            LIMIT 1
+        ";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':nombre' => $nombre, ':pw' => $pw]);
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$fila) {
             header('Location: index.php?tab=login&error=credenciales'); exit;
         }
 
-        $rol = $todos[$nombre]['rol'];
-        $_SESSION['usuario_id']     = $nombre;
-        $_SESSION['usuario_nombre'] = $nombre;
-        $_SESSION['rol']            = $rol;
-        header('Location: index.php?rol=' . urlencode($rol)); exit;
+        $_SESSION['usuario_id']     = $fila['id_usuario'];
+        $_SESSION['usuario_nombre'] = $fila['nombre'];
+        $_SESSION['rol']            = $fila['rol'];
 
+        header('Location: index.php?rol=' . urlencode($fila['rol'])); exit;
+
+    /* ---- REGISTRO ---- */
     } elseif ($accion === 'registro') {
         $nombre     = trim($_POST['nombre']     ?? '');
         $pw         = $_POST['password']        ?? '';
@@ -135,14 +165,45 @@ function fn_procesar_auth()
         if ($pw !== $pw2) {
             header('Location: index.php?tab=registro&error=pw_no_coincide'); exit;
         }
-        if (isset($todos[$nombre])) {
+
+        $conn = fn_get_conn();
+        if (!$conn) {
+            header('Location: index.php?tab=registro&error=db_error'); exit;
+        }
+
+        // Verificar si el nombre ya existe
+        $chk = $conn->prepare("SELECT 1 FROM usuarios WHERE nombre = :nombre");
+        $chk->execute([':nombre' => $nombre]);
+        if ($chk->fetch()) {
             header('Location: index.php?tab=registro&error=usuario_existe'); exit;
         }
 
-        $_SESSION['usuarios_registrados'][$nombre] = [
-            'password' => $pw,
-            'rol'      => $rol_nombre,
-        ];
+        // Obtener id del rol
+        $rres = $conn->prepare("SELECT id_rol FROM roles WHERE nombre = :rol");
+        $rres->execute([':rol' => $rol_nombre]);
+        $rol_id = $rres->fetchColumn();
+        if (!$rol_id) {
+            header('Location: index.php?tab=registro&error=db_error'); exit;
+        }
+
+        // Insertar usuario con sha256
+        $ins = $conn->prepare(
+            "INSERT INTO usuarios (nombre, clave, fecha_clave)
+             VALUES (:nombre, sha256((:pw)::bytea), NOW())
+             RETURNING id_usuario"
+        );
+        $ins->execute([':nombre' => $nombre, ':pw' => $pw]);
+        $nuevo_id = $ins->fetchColumn();
+
+        if (!$nuevo_id) {
+            header('Location: index.php?tab=registro&error=db_error'); exit;
+        }
+
+        // Insertar en actuaciones
+        $act = $conn->prepare(
+            "INSERT INTO actuaciones (rol_id, usuario_id) VALUES (:rol_id, :uid)"
+        );
+        $act->execute([':rol_id' => $rol_id, ':uid' => $nuevo_id]);
 
         header('Location: index.php?tab=login&ok=registro'); exit;
     }

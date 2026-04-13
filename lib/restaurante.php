@@ -48,7 +48,7 @@ function fn_desplegar_menu($conn)
 /*--------------------------------------------------------------------*/
 {
     $sentencia = "
-    SELECT platos.id
+    SELECT platos.id_plato AS id
          , platos.nombre
          , tipos.nombre AS tipo
          , descripcion
@@ -100,16 +100,16 @@ function fn_realizar_pedidos($conn)
         // Listado de mesas
         //----------------------------------------
         $sentencia = "
-            SELECT MES.id
+            SELECT MES.id_mesa AS id
                  , MES.sillas
                  , HOR.inicio
                  , USR.nombre as nombre_usr
             FROM mesas AS MES
-            LEFT JOIN horarios      AS HOR ON MES.id = HOR.mesa_id
-            LEFT JOIN reservaciones AS RES ON RES.id = HOR.reservacion_id
-            LEFT JOIN usuarios      AS USR ON USR.id = RES.cliente_id
+            LEFT JOIN horarios      AS HOR ON MES.id_mesa = HOR.mesa_id
+            LEFT JOIN reservaciones AS RES ON RES.id_reservacion = HOR.reservacion_id
+            LEFT JOIN usuarios      AS USR ON USR.id_usuario = RES.cliente_id
             WHERE HOR.inicio BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '1 day'
-            ORDER BY MES.id
+            ORDER BY MES.id_mesa
             ";
         $resultado = procesar_query($sentencia, $conn);
  
