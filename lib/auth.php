@@ -1,25 +1,26 @@
 <?php
-/*------------------------------------------------------------------*/
-/**
- * @brief Usuarios de prueba hardcodeados (sin BD por ahora).
- *        Formato: 'nombre' => ['password' => '...', 'rol' => '...']
+/*
+ * auth.php — Autenticación con PDO contra PostgreSQL.
  */
-$USUARIOS_PRUEBA = [
-    'admin'    => ['password' => '1234', 'rol' => 'administrador'],
-    'maitre'   => ['password' => '1235', 'rol' => 'maitre'],
-    'mesero'   => ['password' => '1236', 'rol' => 'mesero'],
-    'cocinero' => ['password' => '1237', 'rol' => 'cocinero'],
-    'cliente'  => ['password' => '1238', 'rol' => 'cliente'],
-];
 
-/*------------------------------------------------------------------*/
-/**
- * @brief Genera el formulario de autenticación (login + registro).
- * @return string HTML completo del formulario.
- */
-function fn_formulario_auth()
-/*--------------------------------------------------------------------*/
+function fn_get_conn()
 {
+    if (!isset($GLOBALS['host'])) return null;
+    try {
+        $dsn  = "pgsql:host={$GLOBALS['host']};dbname={$GLOBALS['dbname']}";
+        $conn = new PDO($dsn, $GLOBALS['user'], $GLOBALS['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        return $conn;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+function fn_formulario_auth()
+{
+    $tab = $_GET['tab'] ?? 'login';
+
     $msg = '';
     if (isset($_GET['error'])) {
         $msg = match($_GET['error']) {
@@ -27,6 +28,7 @@ function fn_formulario_auth()
             'usuario_existe' => '<div class="auth-msg auth-error">❌ Ese nombre de usuario ya está registrado.</div>',
             'campos'         => '<div class="auth-msg auth-error">❌ Por favor completa todos los campos.</div>',
             'pw_no_coincide' => '<div class="auth-msg auth-error">❌ Las contraseñas no coinciden.</div>',
+            'db_error'       => '<div class="auth-msg auth-error">❌ Error de base de datos. Contacta al administrador.</div>',
             default          => ''
         };
     }
@@ -45,110 +47,112 @@ function fn_formulario_auth()
         ' . $msg . '
 
         <div class="auth-tabs">
-            <button class="auth-tab active" onclick="switchTab(\'login\', this)">Iniciar Sesión</button>
-            <button class="auth-tab" onclick="switchTab(\'registro\', this)">Crear Cuenta</button>
+            <a href="?tab=login"
+               class="auth-tab ' . ($tab === 'login' ? 'active' : '') . '">
+               Iniciar Sesión
+            </a>
+            <a href="?tab=registro"
+               class="auth-tab ' . ($tab === 'registro' ? 'active' : '') . '">
+               Crear Cuenta
+            </a>
         </div>
 
-        <!-- LOGIN -->
-        <div id="tab-login" class="auth-form-wrap active">
+        ' . ($tab === 'login' ? '
+        <div class="auth-form-wrap active">
             <form method="POST" action="login.php" class="auth-form">
                 <input type="hidden" name="accion" value="login" />
                 <div class="auth-field">
                     <label>Nombre de usuario</label>
-                    <input type="text" name="nombre" placeholder="Ej: admin" required autocomplete="username" />
+                    <input type="text" name="nombre" placeholder="Ej: Ana Garcia" required autocomplete="username" />
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
-                    <div class="input-pw">
-                        <input type="password" name="password" id="pw-login" placeholder="••••••••" required />
-                        <button type="button" class="toggle-pw" onclick="togglePw(\'pw-login\')">👁</button>
-                    </div>
+                    <input type="password" name="password" placeholder="••••••••" required />
                 </div>
                 <button type="submit" class="auth-btn">Entrar →</button>
             </form>
         </div>
-
-        <!-- REGISTRO -->
-        <div id="tab-registro" class="auth-form-wrap">
+        ' : '
+        <div class="auth-form-wrap active">
             <form method="POST" action="login.php" class="auth-form">
                 <input type="hidden" name="accion" value="registro" />
                 <div class="auth-field">
                     <label>Nombre de usuario</label>
-                    <input type="text" name="nombre" placeholder="Ej: maria_gomez" required />
+                    <input type="text" name="nombre" placeholder="Ej: Maria Gomez" required />
                 </div>
                 <div class="auth-field">
                     <label>Contraseña</label>
-                    <div class="input-pw">
-                        <input type="password" name="password" id="pw-reg" placeholder="Mínimo 6 caracteres" required minlength="6" />
-                        <button type="button" class="toggle-pw" onclick="togglePw(\'pw-reg\')">👁</button>
-                    </div>
+                    <input type="password" name="password" placeholder="Mínimo 6 caracteres" required minlength="6" />
                 </div>
                 <div class="auth-field">
                     <label>Confirmar contraseña</label>
-                    <div class="input-pw">
-                        <input type="password" name="password2" id="pw-reg2" placeholder="Repite la contraseña" required />
-                        <button type="button" class="toggle-pw" onclick="togglePw(\'pw-reg2\')">👁</button>
-                    </div>
+                    <input type="password" name="password2" placeholder="Repite la contraseña" required />
                 </div>
                 <div class="auth-field">
                     <label>Rol</label>
                     <select name="rol_nombre" required>
                         <option value="">— Selecciona tu rol —</option>
-                        <option value="administrador">⚙️ Administrador</option>
-                        <option value="maitre">🎩 Maître</option>
-                        <option value="mesero">🍷 Mesero</option>
-                        <option value="cocinero">👨‍🍳 Cocinero</option>
-                        <option value="cliente">🧑‍💼 Cliente</option>
+                        <option value="Administrador">⚙️ Administrador</option>
+                        <option value="Maitre">🎩 Maître</option>
+                        <option value="Mesero">🍷 Mesero</option>
+                        <option value="Cocinero">👨‍🍳 Cocinero</option>
+                        <option value="Cliente">🧑‍💼 Cliente</option>
                     </select>
                 </div>
                 <button type="submit" class="auth-btn">Crear cuenta →</button>
             </form>
         </div>
+        ') . '
     </div>
     ';
 }
 
-/*------------------------------------------------------------------*/
-/**
- * @brief Procesa login y registro SIN base de datos.
- *        Los usuarios registrados se guardan en $_SESSION['usuarios_registrados']
- *        para que persistan durante la sesión.
- */
 function fn_procesar_auth()
-/*--------------------------------------------------------------------*/
 {
-    global $USUARIOS_PRUEBA;
-
     session_start();
-
-    // Combinar usuarios hardcodeados + los registrados en esta sesión
-    $usuarios_sesion = $_SESSION['usuarios_registrados'] ?? [];
-    $todos = array_merge($USUARIOS_PRUEBA, $usuarios_sesion);
 
     $accion = $_POST['accion'] ?? '';
 
-    /* ── LOGIN ──────────────────────────────────────────────── */
+    /* ---- LOGIN ---- */
     if ($accion === 'login') {
         $nombre = trim($_POST['nombre'] ?? '');
-        $pw     = $_POST['password'] ?? '';
+        $pw     = $_POST['password']   ?? '';
 
         if (!$nombre || !$pw) {
-            header('Location: index.php?error=campos'); exit;
+            header('Location: index.php?tab=login&error=campos'); exit;
         }
 
-        if (!isset($todos[$nombre]) || $todos[$nombre]['password'] !== $pw) {
-            header('Location: index.php?error=credenciales'); exit;
+        $conn = fn_get_conn();
+        if (!$conn) {
+            header('Location: index.php?tab=login&error=db_error'); exit;
         }
 
-        $rol = $todos[$nombre]['rol'];
+        $sql = "
+            SELECT u.id_usuario, u.nombre,
+                   COALESCE(r.nombre, 'Cliente') AS rol
+            FROM usuarios u
+            LEFT JOIN actuaciones a ON a.usuario_id = u.id_usuario
+            LEFT JOIN roles       r ON r.id_rol     = a.rol_id
+            WHERE u.nombre = :nombre
+              AND encode(u.clave, 'hex') = encode(sha256((:pw)::bytea), 'hex')
+            LIMIT 1
+        ";
 
-        $_SESSION['usuario_id']     = $nombre; // usamos el nombre como id temporal
-        $_SESSION['usuario_nombre'] = $nombre;
-        $_SESSION['rol']            = $rol;
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':nombre' => $nombre, ':pw' => $pw]);
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        header('Location: index.php?rol=' . urlencode($rol)); exit;
+        if (!$fila) {
+            header('Location: index.php?tab=login&error=credenciales'); exit;
+        }
 
-    /* ── REGISTRO ───────────────────────────────────────────── */
+        $_SESSION['usuario_id']     = $fila['id_usuario'];
+        $_SESSION['usuario_nombre'] = $fila['nombre'];
+        $_SESSION['rol']            = $fila['rol'];
+
+        header('Location: index.php?rol=' . urlencode($fila['rol'])); exit;
+
+    /* ---- REGISTRO ---- */
     } elseif ($accion === 'registro') {
         $nombre     = trim($_POST['nombre']     ?? '');
         $pw         = $_POST['password']        ?? '';
@@ -156,22 +160,52 @@ function fn_procesar_auth()
         $rol_nombre = trim($_POST['rol_nombre'] ?? '');
 
         if (!$nombre || !$pw || !$rol_nombre) {
-            header('Location: index.php?error=campos'); exit;
+            header('Location: index.php?tab=registro&error=campos'); exit;
         }
         if ($pw !== $pw2) {
-            header('Location: index.php?error=pw_no_coincide'); exit;
-        }
-        if (isset($todos[$nombre])) {
-            header('Location: index.php?error=usuario_existe'); exit;
+            header('Location: index.php?tab=registro&error=pw_no_coincide'); exit;
         }
 
-        // Guardar el nuevo usuario en la sesión
-        $_SESSION['usuarios_registrados'][$nombre] = [
-            'password' => $pw,
-            'rol'      => $rol_nombre,
-        ];
+        $conn = fn_get_conn();
+        if (!$conn) {
+            header('Location: index.php?tab=registro&error=db_error'); exit;
+        }
 
-        header('Location: index.php?ok=registro'); exit;
+        // Verificar si el nombre ya existe
+        $chk = $conn->prepare("SELECT 1 FROM usuarios WHERE nombre = :nombre");
+        $chk->execute([':nombre' => $nombre]);
+        if ($chk->fetch()) {
+            header('Location: index.php?tab=registro&error=usuario_existe'); exit;
+        }
+
+        // Obtener id del rol
+        $rres = $conn->prepare("SELECT id_rol FROM roles WHERE nombre = :rol");
+        $rres->execute([':rol' => $rol_nombre]);
+        $rol_id = $rres->fetchColumn();
+        if (!$rol_id) {
+            header('Location: index.php?tab=registro&error=db_error'); exit;
+        }
+
+        // Insertar usuario con sha256
+        $ins = $conn->prepare(
+            "INSERT INTO usuarios (nombre, clave, fecha_clave)
+             VALUES (:nombre, sha256((:pw)::bytea), NOW())
+             RETURNING id_usuario"
+        );
+        $ins->execute([':nombre' => $nombre, ':pw' => $pw]);
+        $nuevo_id = $ins->fetchColumn();
+
+        if (!$nuevo_id) {
+            header('Location: index.php?tab=registro&error=db_error'); exit;
+        }
+
+        // Insertar en actuaciones
+        $act = $conn->prepare(
+            "INSERT INTO actuaciones (rol_id, usuario_id) VALUES (:rol_id, :uid)"
+        );
+        $act->execute([':rol_id' => $rol_id, ':uid' => $nuevo_id]);
+
+        header('Location: index.php?tab=login&ok=registro'); exit;
     }
 }
 ?>

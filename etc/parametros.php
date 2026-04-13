@@ -1,6 +1,7 @@
 <?php
 $host = "localhost";
-$dbname = "restaurante";
-$user = "652_gramo";
+$dbname = "Restaurante";
+$user = "postgres";
+$password = "posabgress2025$$";
 
 ?>

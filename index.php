@@ -6,6 +6,12 @@ require_once 'lib/libreria.php';
 require_once 'lib/restaurante.php';
 require_once 'lib/auth.php';
 
+// Exponer parámetros de BD en $GLOBALS para fn_get_conn() en auth.php
+$GLOBALS['host']     = $host;
+$GLOBALS['dbname']   = $dbname;
+$GLOBALS['user']     = $user;
+$GLOBALS['password'] = $password;
+
 if (isset($_GET['logout'])) {
     session_destroy();
     header('Location: index.php');
@@ -15,16 +21,16 @@ if (isset($_GET['logout'])) {
 $autenticado    = isset($_SESSION['usuario_id']);
 $usuario_nombre = $_SESSION['usuario_nombre'] ?? '';
 $rol_sesion     = $_SESSION['rol'] ?? '';
-$rol = $_GET['rol'] ?? ($autenticado ? $rol_sesion : 'auth');
+$rol = $autenticado ? strtolower($rol_sesion) : 'auth';
 
 if (!$autenticado && $rol !== 'auth') {
     $rol = 'auth';
 }
 
 $conn = null;
-//if ($autenticado) {
-  //  $conn = pg_conectar($host, $dbname, $user);
-//}
+if ($autenticado) {
+    $conn = pg_conectar($host, $dbname, $user, $password);
+}
 
 function contenido($rol, $conn, $autenticado, $usuario_nombre) {
 
@@ -212,10 +218,19 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
 $contenido = contenido($rol, $conn, $autenticado, $usuario_nombre);
 $esqueleto = file_get_contents("esqueleto.html");
 
-$session_info = $autenticado
-    ? '<span class="session-user">👤 ' . htmlspecialchars($usuario_nombre) . ' <a href="?logout=1" class="logout-link">Salir</a></span>'
-    : '';
+if (!$autenticado) {
+    $nav = '';
+} else {
+    $nav = '
+        <a href="index.php">🏠 Inicio</a>
+        <span class="session-user">
+            👤 ' . htmlspecialchars($usuario_nombre) . '
+            &nbsp;·&nbsp;
+            <a href="?logout=1" class="logout-link">Salir</a>
+        </span>
+    ';
+}
 
-$esqueleto = str_replace('<!-- SESSION_SLOT -->', $session_info, $esqueleto);
+$esqueleto = str_replace('<!-- NAV_SLOT -->', $nav, $esqueleto);
 echo sprintf($esqueleto, $contenido);
 ?>
