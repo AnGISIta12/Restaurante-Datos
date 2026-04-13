@@ -92,6 +92,8 @@ Permite seleccionar el rol del usuario:
 - XAMPP (entorno local en Windows)
 
 ---
+## IA IMPLEMENTADA
+Para ello usamos Ollama con Aider para realizar cambios dentro del entorno del proyecto.
 
 ## 🚀 Instalación en Windows con XAMPP
 
