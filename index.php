@@ -5,6 +5,7 @@ require_once 'etc/parametros.php';
 require_once 'lib/libreria.php';
 require_once 'lib/restaurante.php';
 require_once 'lib/auth.php';
+require_once 'lib/acciones.php';  // ← NUEVO: incluir las interfaces
 
 // Exponer parámetros de BD en $GLOBALS para fn_get_conn() en auth.php
 $GLOBALS['host']     = $host;
@@ -21,10 +22,45 @@ if (isset($_GET['logout'])) {
 $autenticado    = isset($_SESSION['usuario_id']);
 $usuario_nombre = $_SESSION['usuario_nombre'] ?? '';
 $rol_sesion     = $_SESSION['rol'] ?? '';
-$rol = $autenticado ? strtolower($rol_sesion) : 'auth';
+$rol_param      = $_GET['rol'] ?? '';  // ← El rol que viene del botón
 
-if (!$autenticado && $rol !== 'auth') {
-    $rol = 'auth';
+// Determinar qué mostrar:
+// - Si hay un parámetro 'rol' en la URL, es una acción específica
+// - Si no, mostrar el panel principal del rol del usuario
+$accion_especifica = false;
+$rol_a_mostrar = '';
+
+if (!empty($rol_param)) {
+    // Verificar si el rol_param es una acción (como 'admin_mesas') o un rol
+    $roles_validos = ['administrador', 'maitre', 'mesero', 'cocinero', 'cliente'];
+    if (in_array(strtolower($rol_param), $roles_validos)) {
+        // Es un rol normal
+        $rol_a_mostrar = strtolower($rol_param);
+    } else {
+        // Es una acción específica (admin_mesas, registrar, etc.)
+        $accion_especifica = true;
+        // Determinar a qué rol pertenece esta acción
+        if (strpos($rol_param, 'admin_') === 0 || strpos($rol_param, 'reporte_') === 0) {
+            $rol_a_mostrar = 'administrador';
+        } elseif (in_array($rol_param, ['registrar', 'asignar', 'verificar', 'cupo', 'proximas'])) {
+            $rol_a_mostrar = 'maitre';
+        } elseif (in_array($rol_param, ['registrar', 'agregar', 'estado', 'entrega', 'listos'])) {
+            $rol_a_mostrar = 'mesero';
+        } elseif (in_array($rol_param, ['preparacion', 'tiempo', 'listo'])) {
+            $rol_a_mostrar = 'cocinero';
+        } elseif (in_array($rol_param, ['reservar', 'hist_reservaciones', 'hist_pedidos'])) {
+            $rol_a_mostrar = 'cliente';
+        } else {
+            $rol_a_mostrar = strtolower($rol_sesion);
+        }
+    }
+} else {
+    $rol_a_mostrar = $autenticado ? strtolower($rol_sesion) : 'auth';
+}
+
+// Si no está autenticado, mostrar formulario de auth
+if (!$autenticado) {
+    $rol_a_mostrar = 'auth';
 }
 
 $conn = null;
@@ -32,12 +68,18 @@ if ($autenticado) {
     $conn = pg_conectar($host, $dbname, $user, $password);
 }
 
-function contenido($rol, $conn, $autenticado, $usuario_nombre) {
-
+function contenido($rol_a_mostrar, $accion_especifica, $conn, $autenticado, $usuario_nombre) {
+    
     if (!$autenticado) return fn_formulario_auth();
-
-    switch($rol) {
-
+    
+    // Si es una acción específica, mostrar la interfaz de esa acción
+    if ($accion_especifica) {
+        $accion = $_GET['rol'];  // La acción viene en el parámetro 'rol'
+        return mostrar_interfaz($rol_a_mostrar, $accion, $conn);
+    }
+    
+    // Si no, mostrar el panel principal según el rol
+    switch($rol_a_mostrar) {
         case "administrador":
             return '
             <div class="role-header admin-header">
@@ -77,7 +119,7 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
                 </div>
             </div>
             <a href="index.php" class="btn-volver">← Menú Principal</a>';
-
+            
         case "maitre":
             return '
             <div class="role-header maitre-header">
@@ -85,29 +127,29 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
                 <div><h2>Panel Maître</h2><p class="role-desc">Gestión de reservaciones y asignación de mesas</p></div>
             </div>
             <div class="funciones-grid">
-                <div class="funcion-card" onclick="window.location=\'?rol=maitre&accion=registrar\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=registrar\'">
                     <div class="card-icon">✍️</div><h3>Registrar Reservación</h3>
                     <p>Crear una nueva reservación para un cliente</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=maitre&accion=asignar\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=asignar\'">
                     <div class="card-icon">🗺️</div><h3>Asignar Mesa</h3>
                     <p>Asignar mesa según disponibilidad y capacidad</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=maitre&accion=verificar\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=verificar\'">
                     <div class="card-icon">✅</div><h3>Verificar Disponibilidad</h3>
                     <p>Comprobar que no se crucen reservaciones</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=maitre&accion=cupo\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=cupo\'">
                     <div class="card-icon">👁️</div><h3>Validar Cupo Total</h3>
                     <p>Verificar la capacidad total del restaurante</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=maitre&accion=proximas\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=proximas\'">
                     <div class="card-icon">🕐</div><h3>Reservaciones Próximas</h3>
                     <p>Consultar las reservaciones del día y semana</p><span class="card-arrow">→</span>
                 </div>
             </div>
             <a href="index.php" class="btn-volver">← Menú Principal</a>';
-
+            
         case "mesero":
             return '
             <div class="role-header mesero-header">
@@ -115,30 +157,30 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
                 <div><h2>Panel Mesero</h2><p class="role-desc">Gestión de pedidos y atención a mesas</p></div>
             </div>
             <div class="funciones-grid">
-                <div class="funcion-card" onclick="window.location=\'?rol=mesero&accion=registrar\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=registrar\'">
                     <div class="card-icon">📝</div><h3>Registrar Pedido</h3>
                     <p>Iniciar un nuevo pedido para una mesa</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=mesero&accion=agregar\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=agregar\'">
                     <div class="card-icon">➕</div><h3>Agregar Ítems</h3>
                     <p>Añadir múltiples platos a un pedido existente</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=mesero&accion=estado\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=estado\'">
                     <div class="card-icon">🔄</div><h3>Actualizar Estado</h3>
                     <p>En preparación → Listo → Entregado</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=mesero&accion=entrega\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=entrega\'">
                     <div class="card-icon">🚀</div><h3>Registrar Entrega</h3>
                     <p>Confirmar la entrega de un pedido a la mesa</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card notif" onclick="window.location=\'?rol=mesero&accion=listos\'">
+                <div class="funcion-card notif" onclick="window.location=\'?rol=listos\'">
                     <div class="card-icon">🔔</div><h3>Pedidos Listos</h3>
                     <p>Ver notificaciones de pedidos listos para entregar</p>
-                    <span class="card-arrow">→</span><span class="badge">3</span>
+                    <span class="card-arrow">→</span>
                 </div>
             </div>
             <a href="index.php" class="btn-volver">← Menú Principal</a>';
-
+            
         case "cocinero":
             return '
             <div class="role-header cocinero-header">
@@ -146,21 +188,21 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
                 <div><h2>Panel Cocinero</h2><p class="role-desc">Gestión de la cocina y estado de pedidos</p></div>
             </div>
             <div class="funciones-grid">
-                <div class="funcion-card" onclick="window.location=\'?rol=cocinero&accion=preparacion\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=preparacion\'">
                     <div class="card-icon">🔥</div><h3>Pedidos en Preparación</h3>
                     <p>Ver todos los pedidos activos en la cocina</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=cocinero&accion=tiempo\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=tiempo\'">
                     <div class="card-icon">⏱️</div><h3>Ordenar por Tiempo</h3>
                     <p>Ver pedidos ordenados por tiempo de preparación</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=cocinero&accion=listo\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=listo\'">
                     <div class="card-icon">✅</div><h3>Marcar como Listo</h3>
                     <p>Actualizar el estado de un pedido a "Listo"</p><span class="card-arrow">→</span>
                 </div>
             </div>
             <a href="index.php" class="btn-volver">← Menú Principal</a>';
-
+            
         case "cliente":
             return '
             <div class="role-header cliente-header">
@@ -168,21 +210,21 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
                 <div><h2>Panel Cliente</h2><p class="role-desc">Tu experiencia gastronómica personalizada</p></div>
             </div>
             <div class="funciones-grid">
-                <div class="funcion-card" onclick="window.location=\'?rol=cliente&accion=reservar\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=reservar\'">
                     <div class="card-icon">📆</div><h3>Solicitar Reservación</h3>
                     <p>Reservar una mesa para tu próxima visita</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=cliente&accion=hist_reservaciones\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=hist_reservaciones\'">
                     <div class="card-icon">📋</div><h3>Historial de Reservaciones</h3>
                     <p>Consultar todas tus reservaciones anteriores</p><span class="card-arrow">→</span>
                 </div>
-                <div class="funcion-card" onclick="window.location=\'?rol=cliente&accion=hist_pedidos\'">
+                <div class="funcion-card" onclick="window.location=\'?rol=hist_pedidos\'">
                     <div class="card-icon">🧾</div><h3>Historial de Pedidos</h3>
                     <p>Revisar todos los pedidos que has realizado</p><span class="card-arrow">→</span>
                 </div>
             </div>
             <a href="index.php" class="btn-volver">← Menú Principal</a>';
-
+            
         default:
             return '
             <div class="principal-hero">
@@ -215,7 +257,7 @@ function contenido($rol, $conn, $autenticado, $usuario_nombre) {
     }
 }
 
-$contenido = contenido($rol, $conn, $autenticado, $usuario_nombre);
+$contenido = contenido($rol_a_mostrar, $accion_especifica, $conn, $autenticado, $usuario_nombre);
 $esqueleto = file_get_contents("esqueleto.html");
 
 if (!$autenticado) {
