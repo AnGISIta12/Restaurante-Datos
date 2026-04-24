@@ -1,6 +1,8 @@
 # Sistema de Gestión Restaurante  
 **Bases de Datos 2025-1**  
 Pontificia Universidad Javeriana  
+Violeta Fajardo
+Juan Mateo Madrigal
 Angy Bautista
 
 ---
