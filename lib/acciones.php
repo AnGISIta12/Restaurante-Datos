@@ -379,6 +379,7 @@ function interfaz_maitre($accion, $conn) {
          FROM reservaciones r
          JOIN usuarios u ON r.cliente_id = u.id_usuario
          JOIN horarios h ON r.id_reservacion = h.reservacion_id
+         JOIN mesas m ON m.id_mesa = h.mesa_id
          WHERE h.inicio BETWEEN NOW() AND NOW() + INTERVAL '30 minutes'
          ORDER BY h.inicio ASC", $conn);
          
@@ -709,7 +710,7 @@ function _interfaz_mesero_impl($accion, $conn, $usuario_id) {
             $conn->prepare("UPDATE ordenes SET estado = ? WHERE id_orden = ?")
                  ->execute([(int)$_POST['nuevo_estado'], $_POST['orden_id']]);
             return "<div class='auth-msg auth-success'>✅ Estado actualizado.</div>
-                    <a href='?rol=mesero&rol=estado' class='auth-btn' style='display:inline-block;margin-top:8px;'>Ver más órdenes</a>";
+                    <a href='?rol=estado' class='auth-btn' style='display:inline-block;margin-top:8px;'>Ver más órdenes</a>";
         }
         $sql = "SELECT o.id_orden, p.nombre as plato, o.cantidad, o.estado,
                        o.solicitado, pe.id_pedido
@@ -844,7 +845,7 @@ function interfaz_cocinero($accion, $conn, $id_cocinero) {
                         🍽️ {$o['plato']} × {$o['cantidad']} · ⏱️ ~{$mins} min · <small>{$hora}</small><br>
                         ".label_orden($o['estado'])."
                     </div>
-                    <a href='?rol=cocinero&listo={$o['id_orden']}' class='auth-btn'
+                    <a href='?rol=preparacion&listo={$o['id_orden']}' class='auth-btn'
                        style='background:#27ae60;margin:0;'
                        onclick=\"return confirm('¿Marcar como listo?')\">✅ Marcar Listo</a>
                 </div></div><br>";
@@ -879,7 +880,7 @@ function interfaz_cocinero($accion, $conn, $id_cocinero) {
                 <td style='text-align:center;'>{$o['cantidad']}</td>
                 <td>{$o['t_prep']}</td>
                 <td>".label_orden($o['estado'])."</td>
-                <td><a href='?rol=cocinero&listo={$o['id_orden']}'
+                <td><a href='?rol=tiempo&listo={$o['id_orden']}'
                        style='background:#27ae60;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:.85em;'
                        onclick=\"return confirm('¿Marcar listo?')\">✅ Listo</a></td>
             </tr>";

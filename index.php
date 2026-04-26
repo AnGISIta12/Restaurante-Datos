@@ -33,18 +33,24 @@ $rol_a_mostrar = '';
 if (!empty($rol_param)) {
     // Verificar si el rol_param es una acción (como 'admin_mesas') o un rol
     $roles_validos = ['administrador', 'maitre', 'mesero', 'cocinero', 'cliente'];
+
     if (in_array(strtolower($rol_param), $roles_validos)) {
         // Es un rol normal
         $rol_a_mostrar = strtolower($rol_param);
     } else {
         // Es una acción específica (admin_mesas, registrar, etc.)
         $accion_especifica = true;
+
         // Determinar a qué rol pertenece esta acción
         if (strpos($rol_param, 'admin_') === 0 || strpos($rol_param, 'reporte_') === 0) {
             $rol_a_mostrar = 'administrador';
         } elseif (in_array($rol_param, ['registrar', 'asignar', 'verificar', 'cupo', 'proximas'])) {
-            $rol_a_mostrar = 'maitre';
-        } elseif (in_array($rol_param, ['registrar', 'agregar', 'estado', 'entrega', 'listos'])) {
+            if (strtolower($rol_sesion) === 'mesero' && $rol_param === 'registrar') {
+                $rol_a_mostrar = 'mesero';
+            } else {
+                $rol_a_mostrar = 'maitre';
+            }
+        } elseif (in_array($rol_param, ['agregar', 'estado', 'entrega', 'listos'])) {
             $rol_a_mostrar = 'mesero';
         } elseif (in_array($rol_param, ['preparacion', 'tiempo', 'listo'])) {
             $rol_a_mostrar = 'cocinero';
@@ -275,4 +281,4 @@ if (!$autenticado) {
 
 $esqueleto = str_replace('<!-- NAV_SLOT -->', $nav, $esqueleto);
 echo sprintf($esqueleto, $contenido);
-?>
+?> 
