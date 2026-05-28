@@ -653,16 +653,19 @@ function _interfaz_mesero_impl($accion, $conn, $usuario_id) {
 
     if ($accion == 'registrar') {
         if (isset($_POST['btn_abrir_pedido'])) {
-            $stmt = $conn->prepare("INSERT INTO pedidos (cliente_id, mesero_id) VALUES (?,?) RETURNING id_pedido");
-            $stmt->execute([$_POST['cliente_id'], $usuario_id]);
+            $fecha = $_POST['fecha_pedido'] ?: date('Y-m-d');
+            $stmt = $conn->prepare("INSERT INTO pedidos (cliente_id, mesero_id, fecha_pedido) VALUES (?,?,?) RETURNING id_pedido");
+            $stmt->execute([$_POST['cliente_id'], $usuario_id, $fecha]);
             $nuevo = $stmt->fetchColumn();
-            return "<div class='auth-msg auth-success'>✅ Pedido #$nuevo abierto correctamente.</div>";
+            $fecha_fmt = date('d/m/Y', strtotime($fecha));
+            return "<div class='auth-msg auth-success'>✅ Pedido #$nuevo abierto para el $fecha_fmt.</div>";
         }
         $clientes = procesar_query(
             "SELECT u.id_usuario, u.nombre FROM usuarios u
              JOIN actuaciones a ON u.id_usuario = a.usuario_id
              JOIN roles r ON a.rol_id = r.id_rol
              WHERE r.nombre = 'Cliente' ORDER BY u.nombre", $conn);
+        $hoy = date('Y-m-d');
         $html = "<h3>📝 Abrir Comanda</h3>
         <form method='POST' class='card'>
             <div class='auth-field'><label>Cliente</label>
@@ -670,6 +673,11 @@ function _interfaz_mesero_impl($accion, $conn, $usuario_id) {
         foreach($clientes->datos as $c)
             $html .= "<option value='{$c['id_usuario']}'>{$c['nombre']}</option>";
         $html .= "  </select></div>
+            <div class='auth-field'><label>Fecha del Pedido</label>
+                <input type='date' name='fecha_pedido' value='$hoy' required></div>
+            <p style='color:#888;font-size:.85em;margin-top:-8px;'>
+                La fecha determina en qué partición anual se almacena el pedido (tablespace correspondiente).
+            </p>
             <button type='submit' name='btn_abrir_pedido' class='auth-btn'>Iniciar Pedido</button>
         </form>";
         return $html;
